@@ -1,4 +1,4 @@
-# System Design — Healthcare Appointment Manager
+﻿# System Design — Healthcare Appointment Manager
 
 ## Architecture
 
@@ -23,3 +23,4 @@ This was tested by intentionally pointing `SENDGRID_API_KEY` at an invalid value
 ## Trade-offs and Known Limitations
 
 The retry mechanism is time-based (one attempt per cron tick) rather than exponential backoff, which is simpler but less efficient under sustained provider outages. A `status: 'failed'` notification that exhausts its three attempts currently has no operator-facing alert or manual-retry path — it is silently parked. The LLM fallback is a static message rather than a cached/simplified prompt retry, which is a reasonable trade-off for demo scope but would benefit from a secondary retry with backoff in production. Both gaps are acceptable given the project's evaluation focus on demonstrating resilience patterns rather than production hardening.
+
