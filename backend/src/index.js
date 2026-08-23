@@ -7,6 +7,8 @@ const doctorRoutes = require('./routes/doctorRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const symptomRoutes = require('./routes/symptomRoutes');
 const visitRoutes = require('./routes/visitRoutes');
+const cron = require('node-cron');
+const { processNotifications } = require('./jobs/reminders');
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -23,6 +25,9 @@ const PORT = process.env.PORT || 5000;
 db.sequelize.authenticate()
   .then(() => {
     console.log('Database connected successfully.');
+    cron.schedule('* * * * *', () => {
+      processNotifications();
+    });
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
   })
   .catch((err) => {
