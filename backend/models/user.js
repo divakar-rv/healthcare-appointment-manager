@@ -20,6 +20,9 @@ module.exports = (sequelize, DataTypes) => {
     name: DataTypes.STRING,
     email: DataTypes.STRING,
     password_hash: DataTypes.STRING,
+    google_access_token: DataTypes.TEXT,
+    google_refresh_token: DataTypes.TEXT,
+    google_token_expiry: DataTypes.DATE,
     role: DataTypes.STRING
   }, {
     sequelize,

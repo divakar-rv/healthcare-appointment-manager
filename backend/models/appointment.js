@@ -21,6 +21,7 @@ module.exports = (sequelize, DataTypes) => {
     doctor_id: DataTypes.INTEGER,
     slot_start: DataTypes.DATE,
     slot_end: DataTypes.DATE,
+    google_event_id: DataTypes.STRING,
     status: DataTypes.STRING
   }, {
     sequelize,

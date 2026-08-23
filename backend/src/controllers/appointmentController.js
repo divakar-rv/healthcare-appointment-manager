@@ -1,6 +1,8 @@
 const { Appointment, DoctorProfile, DoctorLeave, User } = require('../../models');
 const { Op } = require('sequelize');
 const { sendBookingConfirmation, sendCancellation } = require('../services/email');
+const { createCalendarEvent, deleteCalendarEvent } = require('../services/calendar');
+
 exports.bookAppointment = async (req, res) => {
   try {
     const patient_id = req.user.id;
@@ -39,13 +41,30 @@ exports.bookAppointment = async (req, res) => {
       }
       throw err;
     }
-        // Send confirmation email — failure here should never block the booking itself
+
+    // Send confirmation email — failure here never blocks the booking itself
     try {
       const patient = await User.findByPk(patient_id);
       await sendBookingConfirmation(patient.email, appointment);
     } catch (emailErr) {
       console.error('Booking confirmation email failed:', emailErr.message);
     }
+
+    // Create calendar event for the patient — failure here never blocks the booking
+    try {
+      const patient = await User.findByPk(patient_id);
+      const doctorUser = await User.findByPk(doctor_id);
+      const event = await createCalendarEvent(patient, {
+        summary: 'Appointment with Dr. ' + (doctorUser ? doctorUser.name : 'your doctor'),
+        description: 'Healthcare appointment booked via Healthcare Appointment Manager.',
+        startTime: appointment.slot_start,
+        endTime: appointment.slot_end
+      });
+      await appointment.update({ google_event_id: event.id });
+    } catch (calErr) {
+      console.error('Calendar event creation failed:', calErr.message);
+    }
+
     res.status(201).json(appointment);
   } catch (err) {
     console.error(err);
@@ -122,13 +141,27 @@ exports.cancelAppointment = async (req, res) => {
     if (appointment.patient_id !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Not authorized to cancel this appointment' });
     }
+
     await appointment.update({ status: 'cancelled' });
+
+    // Send cancellation email — failure here never blocks the cancellation itself
     try {
       const patient = await User.findByPk(appointment.patient_id);
       await sendCancellation(patient.email, appointment);
     } catch (emailErr) {
       console.error('Cancellation email failed:', emailErr.message);
     }
+
+    // Delete the calendar event if one exists — failure here never blocks the cancellation
+    try {
+      if (appointment.google_event_id) {
+        const patient = await User.findByPk(appointment.patient_id);
+        await deleteCalendarEvent(patient, appointment.google_event_id);
+      }
+    } catch (calErr) {
+      console.error('Calendar event deletion failed:', calErr.message);
+    }
+
     res.json({ message: 'Appointment cancelled', appointment });
   } catch (err) {
     console.error(err);

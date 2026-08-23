@@ -8,6 +8,7 @@ const appointmentRoutes = require('./routes/appointmentRoutes');
 const symptomRoutes = require('./routes/symptomRoutes');
 const visitRoutes = require('./routes/visitRoutes');
 const cron = require('node-cron');
+const googleAuthRoutes = require('./routes/googleAuthRoutes');
 const { processNotifications } = require('./jobs/reminders');
 const app = express();
 app.use(cors());
@@ -18,6 +19,7 @@ app.use('/api/doctors', doctorRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/symptoms', symptomRoutes);
 app.use('/api/visits', visitRoutes);
+app.use('/api/auth/google', googleAuthRoutes);
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 const PORT = process.env.PORT || 5000;
