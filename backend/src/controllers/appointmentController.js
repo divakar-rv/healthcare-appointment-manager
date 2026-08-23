@@ -130,7 +130,22 @@ exports.getAvailableSlots = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch available slots' });
   }
 };
-
+exports.getMyAppointments = async (req, res) => {
+  try {
+    const where = req.user.role === 'doctor'
+      ? { doctor_id: req.user.id }
+      : { patient_id: req.user.id };
+    const appointments = await Appointment.findAll({
+      where,
+      order: [['slot_start', 'DESC']]
+    });
+    res.set('Cache-Control', 'no-store');
+    res.json(appointments);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch appointments' });
+  }
+};
 exports.cancelAppointment = async (req, res) => {
   try {
     const { id } = req.params;

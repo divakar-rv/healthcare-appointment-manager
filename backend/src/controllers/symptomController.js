@@ -15,7 +15,9 @@ exports.submitSymptoms = async (req, res) => {
     if (appointment.patient_id !== req.user.id) {
       return res.status(403).json({ error: 'Not authorized for this appointment' });
     }
-
+    if (appointment.status !== 'booked') {
+      return res.status(400).json({ error: 'Symptoms can only be submitted for booked appointments' });
+    }
     const existing = await SymptomForm.findOne({ where: { appointment_id } });
     if (existing) {
       return res.status(409).json({ error: 'Symptom form already submitted for this appointment' });
