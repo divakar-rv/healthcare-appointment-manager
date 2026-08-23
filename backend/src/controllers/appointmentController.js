@@ -1,6 +1,6 @@
 const { Appointment, DoctorProfile, DoctorLeave, User } = require('../../models');
 const { Op } = require('sequelize');
-
+const { sendBookingConfirmation, sendCancellation } = require('../services/email');
 exports.bookAppointment = async (req, res) => {
   try {
     const patient_id = req.user.id;
@@ -39,7 +39,13 @@ exports.bookAppointment = async (req, res) => {
       }
       throw err;
     }
-
+        // Send confirmation email — failure here should never block the booking itself
+    try {
+      const patient = await User.findByPk(patient_id);
+      await sendBookingConfirmation(patient.email, appointment);
+    } catch (emailErr) {
+      console.error('Booking confirmation email failed:', emailErr.message);
+    }
     res.status(201).json(appointment);
   } catch (err) {
     console.error(err);
@@ -117,6 +123,12 @@ exports.cancelAppointment = async (req, res) => {
       return res.status(403).json({ error: 'Not authorized to cancel this appointment' });
     }
     await appointment.update({ status: 'cancelled' });
+    try {
+      const patient = await User.findByPk(appointment.patient_id);
+      await sendCancellation(patient.email, appointment);
+    } catch (emailErr) {
+      console.error('Cancellation email failed:', emailErr.message);
+    }
     res.json({ message: 'Appointment cancelled', appointment });
   } catch (err) {
     console.error(err);
